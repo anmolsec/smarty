@@ -90,10 +90,16 @@ export default function MockTestsPage() {
   const [mistakeType, setMistakeType] = useState('');
 
   useEffect(() => {
-    if (!started || paused || seconds <= 0) return;
-    const timer = window.setInterval(() => setSeconds((value) => value - 1), 1000);
+    if (!started || paused) return;
+    const timer = window.setInterval(() => setSeconds((value) => {
+      if (value <= 1) {
+        window.clearInterval(timer);
+        return 0;
+      }
+      return value - 1;
+    }), 1000);
     return () => window.clearInterval(timer);
-  }, [started, paused, seconds]);
+  }, [started, paused]);
 
   const questionCount = selected.objective ? previewQuestions.length : descriptiveQuestions[selected.id].length;
   const progress = useMemo(() => Math.round((Object.keys(answers).length / questionCount) * 100), [answers, questionCount]);
@@ -104,11 +110,15 @@ export default function MockTestsPage() {
 
   const choosePaper = (paper: Paper) => {
     setSelected(paper);
+    setStarted(false);
+    setPaused(false);
     setSeconds(paper.minutes * 60);
     setCurrent(0);
     setAnswers({});
     setFlagged([]);
     setSubmitted(false);
+    setShowSubmitCheck(false);
+    setMistakeType('');
   };
 
   const resetAttempt = () => {
@@ -151,9 +161,14 @@ export default function MockTestsPage() {
             <Clock3 size={18} />
             <div><span>Time remaining</span><strong>{formatTime(seconds)}</strong></div>
           </div>
-          <button className="quiet-button" onClick={() => setPaused(!paused)}>
-            {paused ? <Play size={17} /> : <Pause size={17} />} {paused ? 'Resume' : 'Pause'}
-          </button>
+          <div className="exam-controls">
+            <button className="quiet-button exam-exit-mobile" onClick={() => setStarted(false)}>
+              <ArrowLeft size={17} /> Exit paper
+            </button>
+            <button className="quiet-button" onClick={() => setPaused(!paused)}>
+              {paused ? <Play size={17} /> : <Pause size={17} />} {paused ? 'Resume' : 'Pause'}
+            </button>
+          </div>
         </header>
 
         <main className="exam-layout">

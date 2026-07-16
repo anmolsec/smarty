@@ -46,13 +46,22 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="min-h-full flex flex-col">
-        <nav className="bg-[#fffefa]/90 backdrop-blur-md border-b border-[#dde1dc] sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between gap-2">
-              <Link href="/" className="text-lg md:text-xl font-semibold text-[#173b2c] tracking-tight">
-                Foundation Focus
+        <script
+          id={process.env.NODE_ENV === "production" ? "register-service-worker" : "disable-development-service-worker"}
+          dangerouslySetInnerHTML={{
+            __html: process.env.NODE_ENV === "production"
+              ? `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {}); }`
+              : `if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then((registrations) => Promise.all(registrations.map((registration) => { const worker = registration.active || registration.waiting || registration.installing; return worker && new URL(worker.scriptURL).pathname === '/sw.js' ? registration.unregister() : false; }))).catch(() => {}); } if ('caches' in window) { caches.keys().then((names) => Promise.all(names.filter((name) => name.startsWith('foundation-focus-') || name.startsWith('ca-air1-')).map((name) => caches.delete(name)))).catch(() => {}); }`,
+          }}
+        />
+        <nav className="site-header" aria-label="Primary navigation">
+          <div className="site-header-inner">
+            <div className="site-header-row">
+              <Link href="/" className="site-brand" aria-label="Foundation Focus home">
+                <span className="site-brand-full">Foundation Focus</span>
+                <span className="site-brand-short">Focus</span>
               </Link>
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="site-header-actions">
                 <Notifications />
                 <NavMenu />
               </div>
@@ -60,16 +69,6 @@ export default function RootLayout({
           </div>
         </nav>
         <main className="flex-1">{children}</main>
-
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   );

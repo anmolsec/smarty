@@ -1,12 +1,12 @@
 {
-  "name": "CA Foundation AIR 1 - 30 Day Drill",
-  "short_name": "CA AIR 1",
-  "description": "30-Day AIR 1 Strict Drill Protocol for CA Foundation",
+  "name": "Foundation Focus - 30 Day Practice",
+  "short_name": "Foundation Focus",
+  "description": "A calm 30-day CA Foundation study and exam-practice workspace",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#2563eb",
-  "orientation": "portrait-primary",
+  "background_color": "#f7f7f3",
+  "theme_color": "#174f3a",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icons/icon-192.svg",

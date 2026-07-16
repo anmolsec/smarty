@@ -26,7 +26,15 @@ export default function Notifications() {
   useEffect(() => {
     const syncNotices = () => {
       const storedRead = window.localStorage.getItem('foundation-read-notices');
-      const readIds: string[] = storedRead ? JSON.parse(storedRead) : [];
+      let readIds: string[] = [];
+      if (storedRead) {
+        try {
+          const parsed: unknown = JSON.parse(storedRead);
+          if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) readIds = parsed;
+        } catch {
+          window.localStorage.removeItem('foundation-read-notices');
+        }
+      }
       const account: Notice = { id: 'account', title: 'Sign in to sync your progress', detail: 'Your tasks and test reviews currently stay on this device.', time: 'Account', unread: !readIds.includes('account'), kind: 'account' };
       const current = nextStudyNotice();
       setNotices([current, account].map((notice) => ({ ...notice, unread: notice.unread && !readIds.includes(notice.id) })));
@@ -37,6 +45,15 @@ export default function Notifications() {
   }, []);
 
   const unread = useMemo(() => notices.filter((notice) => notice.unread).length, [notices]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
   const markRead = () => {
     const ids = notices.map((notice) => notice.id);
     window.localStorage.setItem('foundation-read-notices', JSON.stringify(ids));
@@ -51,7 +68,7 @@ export default function Notifications() {
       </button>
       {open && <>
         <button className="notification-scrim" aria-label="Close notifications" onClick={() => setOpen(false)} />
-        <section className="notification-panel" aria-label="Notifications">
+        <section className="notification-panel" aria-label="Notifications" role="dialog" aria-modal="false">
           <header><div><p>Updates</p><h2>Stay in the loop</h2></div><button aria-label="Close notifications" onClick={() => setOpen(false)}><X size={19} /></button></header>
           <div className="notice-list">
             {notices.map((notice) => <article className={`notice ${notice.unread ? 'unread' : ''}`} key={notice.id}>

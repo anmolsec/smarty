@@ -8,6 +8,13 @@ function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+export function getLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function getProtocolStart(): Date {
   return new Date(PROTOCOL_START);
 }
@@ -67,7 +74,7 @@ export function getPhaseDays(day: number): string {
   if (day <= 0) return 'Days remaining';
   if (day <= 10) return `Day ${day}/10`;
   if (day <= 20) return `Day ${day - 10}/10`;
-  if (day <= 27) return `Day ${day - 20}/8`;
+  if (day <= 27) return `Day ${day - 20}/7`;
   return `Day ${day - 27}/3`;
 }
 
@@ -85,7 +92,8 @@ export function getSuggestedSubject(): Subject | null {
   const timeSlot = getCurrentTimeSlot();
   if (!timeSlot) return null;
   const subjects = SCHEDULE_CONFIG.timeSlots[timeSlot].subjects;
-  return subjects[Math.floor(Math.random() * subjects.length)];
+  const dayIndex = Math.max(0, getProtocolDay(new Date()) - 1);
+  return subjects[dayIndex % subjects.length];
 }
 
 export function generateDailyTasks(date: Date): Task[] {
@@ -99,13 +107,15 @@ export function generateTasksForProtocolDay(day: number, date = getProtocolDate(
   Object.entries(SCHEDULE_CONFIG.timeSlots).forEach(([slotKey, slotConfig]) => {
     const timeSlot = slotKey as TimeSlot;
     const subjects = slotConfig.subjects;
+    const slotMinutes = Math.round((slotConfig.endHour - slotConfig.startHour) * 60);
+    const taskDuration = Math.floor(slotMinutes / subjects.length);
     subjects.forEach((subject, index) => {
       tasks.push({
-        id: `${date.toISOString().split('T')[0]}-${timeSlot}-${subject}-${index}`,
+        id: `${getLocalDateKey(date)}-${timeSlot}-${subject}-${index}`,
         day,
         subject,
         task: getTaskDescription(subject, timeSlot, day),
-        duration: 90,
+        duration: taskDuration,
         timeSlot,
         done: false,
       });
@@ -213,26 +223,41 @@ function getTaskDescription(subject: Subject, timeSlot: TimeSlot, day: number): 
   };
 
   const templates = taskTemplates[subject][timeSlot];
-  return `${phase.substring(0, 12)} - ${templates[day % templates.length]}`;
+  const phaseLabel = phase.match(/^Phase \d+/)?.[0] ?? phase;
+  const templateIndex = Math.max(0, day - 1) % templates.length;
+  return `${phaseLabel} · ${templates[templateIndex]}`;
 }
 
 export function assignTasksForUser(userDateTime: Date): DailyPlan {
-  const dateStr = userDateTime.toISOString().split('T')[0];
+  const dateStr = getLocalDateKey(userDateTime);
+  const legacyDateStr = userDateTime.toISOString().split('T')[0];
   const tasks = generateDailyTasks(userDateTime);
 
   let completedCount = 0;
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem(`daily-plan-${dateStr}`);
+    const currentKey = `daily-plan-${dateStr}`;
+    const legacyKey = `daily-plan-${legacyDateStr}`;
+    const stored = localStorage.getItem(currentKey) ?? (legacyKey !== currentKey ? localStorage.getItem(legacyKey) : null);
     if (stored) {
-      const storedTasks = JSON.parse(stored) as Task[];
-      storedTasks.forEach(st => {
-        const idx = tasks.findIndex(t => t.id === st.id);
-        if (idx >= 0) {
-          tasks[idx].done = st.done;
-          tasks[idx].completedAt = st.completedAt;
-          if (st.done) completedCount++;
+      try {
+        const storedTasks = JSON.parse(stored) as Task[];
+        storedTasks.forEach(storedTask => {
+          const normalizedId = legacyDateStr !== dateStr && storedTask.id.startsWith(`${legacyDateStr}-`)
+            ? `${dateStr}-${storedTask.id.slice(legacyDateStr.length + 1)}`
+            : storedTask.id;
+          const index = tasks.findIndex(task => task.id === normalizedId);
+          if (index >= 0) {
+            tasks[index].done = storedTask.done;
+            tasks[index].completedAt = storedTask.completedAt;
+            if (storedTask.done) completedCount++;
+          }
+        });
+        if (!localStorage.getItem(currentKey) && legacyKey !== currentKey) {
+          localStorage.setItem(currentKey, JSON.stringify(tasks.filter((task) => task.done)));
         }
-      });
+      } catch {
+        localStorage.removeItem(currentKey);
+      }
     }
   }
 
@@ -245,11 +270,18 @@ export function assignTasksForUser(userDateTime: Date): DailyPlan {
   };
 }
 
-export function saveTaskCompletion(taskId: string, done: boolean, dateStr = new Date().toISOString().split('T')[0]): void {
+export function saveTaskCompletion(taskId: string, done: boolean, dateStr = getLocalDateKey(new Date())): void {
   if (typeof window === 'undefined') return;
   const key = `daily-plan-${dateStr}`;
   const stored = localStorage.getItem(key);
-  const tasks: Task[] = stored ? JSON.parse(stored) : [];
+  let tasks: Task[] = [];
+  if (stored) {
+    try {
+      tasks = JSON.parse(stored) as Task[];
+    } catch {
+      localStorage.removeItem(key);
+    }
+  }
   const taskIndex = tasks.findIndex(t => t.id === taskId);
   if (taskIndex >= 0) {
     tasks[taskIndex].done = done;

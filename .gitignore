@@ -6,6 +6,7 @@ dist/
 build/
 .next/
 out/
+.vercel/
 
 # Environment variables
 .env
@@ -60,12 +61,8 @@ mocha.opts
 testem.json
 
 # Next.js
-.next/
 .cache/
 .output/
-.vercel/
 
 # TypeScript
 *.tsbuildinfo
-.vercel
-.env*

@@ -1,24 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays, getProtocolDate, generateTasksForProtocolDay, PROTOCOL_DAYS, PROTOCOL_END, PROTOCOL_START } from '@/lib/schedule';
+import { useState, useEffect, useRef } from 'react';
+import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays, getProtocolDate, generateTasksForProtocolDay, getLocalDateKey, PROTOCOL_DAYS, PROTOCOL_END, PROTOCOL_START } from '@/lib/schedule';
 import { DailyPlan, Task, TimeSlot, SUBJECT_LABELS, SUBJECT_COLORS } from '@/types';
 import { Clock, CheckCircle, Circle, Calendar, TrendingUp, AlertTriangle, ChevronDown, LockKeyhole } from 'lucide-react';
 
 export default function DailyPlanPage() {
-  const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
-  const [dailyPlan, setDailyPlan] = useState<DailyPlan>(() => assignTasksForUser(new Date()));
+  const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
+  const [dailyPlan, setDailyPlan] = useState<DailyPlan | null>(null);
   const [currentTimeSlot, setCurrentTimeSlot] = useState<string>('');
   const [currentSlotKey, setCurrentSlotKey] = useState<TimeSlot | null>(null);
   const [suggestedSubject, setSuggestedSubject] = useState<string>('');
   const [showSchedule, setShowSchedule] = useState(false);
   const [showPastPlans, setShowPastPlans] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(() => Math.max(1, getProtocolDay(new Date())));
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const activeDateRef = useRef<string | null>(null);
 
   useEffect(() => {
     const updateStatus = () => {
       const now = new Date();
+      const dateKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
       setCurrentDateTime(now);
+      if (activeDateRef.current !== dateKey) {
+        activeDateRef.current = dateKey;
+        setDailyPlan(assignTasksForUser(now));
+        setSelectedDay(Math.max(1, getProtocolDay(now)));
+      }
       const slot = getCurrentTimeSlot();
       setCurrentSlotKey(slot);
       if (slot) {
@@ -37,22 +44,23 @@ export default function DailyPlanPage() {
   }, []);
 
   const handleTaskToggle = (taskId: string, done: boolean) => {
+    if (!dailyPlan) return;
     saveTaskCompletion(taskId, done, dailyPlan.date);
-    setDailyPlan((prev: DailyPlan) => ({
-      ...prev,
-      tasks: prev.tasks.map((task: Task) =>
-        task.id === taskId ? { ...task, done } : task
-      ),
-      completedCount: done
-        ? prev.completedCount + 1
-        : Math.max(0, prev.completedCount - 1),
-      progressPercentage: Math.round(
-        ((done ? prev.completedCount + 1 : prev.completedCount - 1) / prev.totalCount) * 100
-      ),
-    }));
+    setDailyPlan((previous) => {
+      if (!previous) return previous;
+      const completedCount = done
+        ? Math.min(previous.totalCount, previous.completedCount + 1)
+        : Math.max(0, previous.completedCount - 1);
+      return {
+        ...previous,
+        tasks: previous.tasks.map((task: Task) => task.id === taskId ? { ...task, done } : task),
+        completedCount,
+        progressPercentage: Math.round((completedCount / previous.totalCount) * 100),
+      };
+    });
   };
 
-  const protocolDay = getProtocolDay(new Date());
+  const protocolDay = currentDateTime ? getProtocolDay(currentDateTime) : 1;
   const currentPhase = getPhase(protocolDay);
   const phaseDay = getPhaseDays(protocolDay);
 
@@ -71,10 +79,23 @@ export default function DailyPlanPage() {
   };
   const completedForDay = (day: number) => {
     if (typeof window === 'undefined') return 0;
-    const date = getProtocolDate(day).toISOString().split('T')[0];
+    const date = getLocalDateKey(getProtocolDate(day));
     const stored = localStorage.getItem(`daily-plan-${date}`);
-    return stored ? (JSON.parse(stored) as Task[]).filter((task) => task.done).length : 0;
+    if (!stored) return 0;
+    try {
+      return (JSON.parse(stored) as Task[]).filter((task) => task.done).length;
+    } catch {
+      return 0;
+    }
   };
+
+  if (!dailyPlan || !currentDateTime || selectedDay === null) {
+    return <div className="app-shell-bright min-h-screen p-4 md:p-8"><div className="mx-auto max-w-6xl"><div className="daily-loading" role="status">Preparing today&apos;s study plan…</div></div></div>;
+  }
+
+  const completedHours = dailyPlan.tasks
+    .filter((task) => task.done)
+    .reduce((minutes, task) => minutes + task.duration, 0) / 60;
 
   return (
     <div className="app-shell-bright min-h-screen p-4 md:p-8">
@@ -82,15 +103,15 @@ export default function DailyPlanPage() {
         {/* Header */}
         <div className="text-center space-y-3">
           {protocolDay > 0 && protocolDay <= 30 ? (
-            <div className="inline-block bg-red-500/20 border border-red-500/40 rounded-full px-3 py-1 text-red-300 text-xs md:text-sm font-medium">
+            <div className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
               {selectedDay === protocolDay ? `Day ${protocolDay} of 30 · ${currentPhase}` : `Reviewing Day ${selectedDay} · ${getPhase(selectedDay)}`}
             </div>
-          ) : <div className="inline-block bg-red-500/20 border border-red-500/40 rounded-full px-3 py-1 text-red-300 text-xs md:text-sm font-medium">30-day plan opens {PROTOCOL_START.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>}
-          <h1 className="text-3xl md:text-5xl font-bold text-white">
+          ) : <div className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">30-day plan opens {PROTOCOL_START.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>}
+          <h1 className="text-3xl md:text-5xl font-bold text-slate-900">
             Daily Study Plan
           </h1>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-sm md:text-base text-purple-200">
-            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm md:text-base text-slate-600">
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200">
               <Calendar className="w-4 h-4" />
               <span>{currentDateTime.toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -99,7 +120,7 @@ export default function DailyPlanPage() {
                 day: 'numeric',
               })}</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200">
               <Clock className="w-4 h-4" />
               <span>{currentDateTime.toLocaleTimeString()}</span>
             </div>
@@ -107,21 +128,21 @@ export default function DailyPlanPage() {
         </div>
 
         {/* Current Status Card */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/20">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <h2 className="text-sm font-semibold text-purple-200 mb-1">Current Time Slot</h2>
-              <p className="text-lg md:text-xl font-bold text-blue-300">{currentTimeSlot}</p>
+              <h2 className="text-sm font-semibold text-slate-600 mb-1">Current time slot</h2>
+              <p className="text-lg md:text-xl font-bold text-blue-700 leading-snug">{currentTimeSlot}</p>
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-purple-200 mb-1">Suggested Focus</h2>
-              <p className="text-lg md:text-xl font-bold text-green-300">{suggestedSubject || '—'}</p>
+              <h2 className="text-sm font-semibold text-slate-600 mb-1">Suggested focus</h2>
+              <p className="text-lg md:text-xl font-bold text-emerald-700 leading-snug">{suggestedSubject || '—'}</p>
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-purple-200 mb-1">Today&apos;s Progress</h2>
+              <h2 className="text-sm font-semibold text-slate-600 mb-1">Selected day&apos;s progress</h2>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-blue-400" />
-                <p className="text-lg md:text-xl font-bold text-blue-300">{dailyPlan.progressPercentage}%</p>
+                <p className="text-lg md:text-xl font-bold text-blue-700">{dailyPlan.progressPercentage}%</p>
               </div>
             </div>
           </div>
@@ -132,7 +153,7 @@ export default function DailyPlanPage() {
               style={{ width: `${dailyPlan.progressPercentage}%` }}
             />
           </div>
-          <p className="text-sm text-gray-300 mt-2">
+          <p className="text-sm text-slate-600 mt-2">
             {dailyPlan.completedCount} of {dailyPlan.totalCount} tasks completed
           </p>
         </div>
@@ -143,8 +164,8 @@ export default function DailyPlanPage() {
             const tasks = dailyPlan.tasks.filter((t: Task) => t.timeSlot === slotKey);
             if (tasks.length === 0) return null;
             return (
-              <div key={slotKey} className={`daily-slot bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/10 ${selectedDay === protocolDay && currentSlotKey === slotKey ? 'current' : ''}`}>
-                <h3 className="text-base md:text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <div key={slotKey} className={`daily-slot rounded-xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm ${selectedDay === protocolDay && currentSlotKey === slotKey ? 'current' : ''}`}>
+                <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-purple-400" />
                   {slotLabel}
                 </h3>
@@ -152,10 +173,10 @@ export default function DailyPlanPage() {
                   {tasks.map((task: Task) => (
                     <div
                       key={task.id}
-                      className={`flex items-center gap-3 p-3 md:p-4 rounded-lg transition-all ${
+                      className={`flex items-start gap-3 p-3 md:p-4 rounded-lg border transition-all ${
                         task.done
-                          ? 'bg-green-900/30 border border-green-500/30'
-                          : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                          ? 'bg-emerald-50 border-emerald-200'
+                          : 'bg-slate-50 border-slate-200 hover:bg-white'
                       }`}
                     >
                       <button
@@ -166,23 +187,23 @@ export default function DailyPlanPage() {
                         {task.done ? (
                           <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
                         ) : (
-                          <Circle className="w-5 h-5 md:w-6 md:h-6 text-gray-400 hover:text-white" />
+                          <Circle className="w-5 h-5 md:w-6 md:h-6 text-slate-500 hover:text-emerald-700" />
                         )}
                       </button>
 
-                      <div className={`flex-shrink-0 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full ${SUBJECT_COLORS[task.subject]}`} />
+                      <div className={`mt-4 flex-shrink-0 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full ${SUBJECT_COLORS[task.subject]}`} />
 
                       <div className="flex-1 min-w-0">
-                        <h4 className={`text-sm md:text-base font-medium truncate ${task.done ? 'text-green-300 line-through' : 'text-white'}`}>
+                        <h4 className={`text-sm md:text-base font-semibold leading-relaxed break-words ${task.done ? 'text-emerald-700 line-through' : 'text-slate-900'}`}>
                           {task.task}
                         </h4>
-                        <p className="text-xs md:text-sm text-gray-400">
+                        <p className="mt-1 text-sm leading-relaxed text-slate-600">
                           {SUBJECT_LABELS[task.subject]} • {task.duration} min
                         </p>
                       </div>
 
                       {task.completedAt && (
-                        <span className="text-xs text-green-400 hidden md:inline">
+                        <span className="text-xs text-emerald-700 hidden md:inline">
                           {new Date(task.completedAt).toLocaleTimeString()}
                         </span>
                       )}
@@ -201,21 +222,21 @@ export default function DailyPlanPage() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
             <p className="text-2xl md:text-3xl font-bold text-blue-400">{dailyPlan.completedCount}</p>
-            <p className="text-xs md:text-sm text-gray-300">Tasks Done</p>
+            <p className="text-sm text-slate-600">Tasks done</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
             <p className="text-2xl md:text-3xl font-bold text-purple-400">{dailyPlan.totalCount - dailyPlan.completedCount}</p>
-            <p className="text-xs md:text-sm text-gray-300">Remaining</p>
+            <p className="text-sm text-slate-600">Remaining</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
             <p className="text-2xl md:text-3xl font-bold text-green-400">{dailyPlan.progressPercentage}%</p>
-            <p className="text-xs md:text-sm text-gray-300">Completion</p>
+            <p className="text-sm text-slate-600">Completion</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20">
-            <p className="text-2xl md:text-3xl font-bold text-pink-400">{Math.round(dailyPlan.completedCount * 1.5)}</p>
-            <p className="text-xs md:text-sm text-gray-300">Hours Studied</p>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+            <p className="text-2xl md:text-3xl font-bold text-pink-500">{Number(completedHours.toFixed(1))}</p>
+            <p className="text-sm text-slate-600">Hours studied</p>
           </div>
         </div>
 
@@ -241,10 +262,10 @@ export default function DailyPlanPage() {
 
         {/* Phase Reminder */}
         {protocolDay > 0 && protocolDay <= 30 && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-200">
-              <span className="font-bold">{currentPhase}</span> — {phaseDay}. Consistency beats intelligence. No gap days.
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+            <p className="text-sm leading-relaxed text-amber-950">
+              <span className="font-bold">{currentPhase}</span> — {phaseDay}. Complete the next clear block; if one slips, use the recovery route and continue.
             </p>
           </div>
         )}

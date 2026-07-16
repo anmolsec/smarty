@@ -1,12 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function NavMenu() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
 
   const links = [
     { href: '/daily-plan', label: 'Daily Plan' },
@@ -21,22 +30,22 @@ export default function NavMenu() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className={`mobile-menu-trigger md:hidden ${open ? 'is-open' : ''}`}
+        className={`mobile-menu-trigger ${open ? 'is-open' : ''}`}
         aria-label="Toggle menu"
         aria-expanded={open}
+        aria-controls="mobile-navigation"
       >
         <span>Menu</span>
         <span className="menu-bars" aria-hidden="true"><i /><i /><i /></span>
       </button>
 
-      <div className="hidden md:flex items-center gap-6">
+      <div className="desktop-nav">
         {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className={`transition-colors ${
-              pathname === link.href ? 'text-[#174f3a] font-semibold' : 'text-[#68746c] hover:text-[#174f3a]'
-            }`}
+            aria-current={pathname === link.href ? 'page' : undefined}
+            className={pathname === link.href ? 'active' : ''}
           >
             {link.label}
           </Link>
@@ -45,18 +54,15 @@ export default function NavMenu() {
 
       {open && (
         <>
-          <button className="mobile-menu-scrim md:hidden" aria-label="Close menu" onClick={() => setOpen(false)} />
-          <div className="mobile-menu-panel md:hidden">
+          <button className="mobile-menu-scrim" aria-label="Close menu" onClick={() => setOpen(false)} />
+          <div className="mobile-menu-panel" id="mobile-navigation">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className={`w-full text-center py-4 rounded-xl text-lg transition-colors ${
-                  pathname === link.href
-                    ? 'bg-[#dce8df] text-[#174f3a] font-semibold'
-                    : 'text-[#59675e] hover:bg-white hover:text-[#174f3a]'
-                }`}
+                aria-current={pathname === link.href ? 'page' : undefined}
+                className={pathname === link.href ? 'active' : ''}
               >
                 {link.label}
               </Link>

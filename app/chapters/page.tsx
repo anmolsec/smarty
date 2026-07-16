@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ArrowRight, BookOpenCheck, Clock3, Compass, RotateCcw, Target } from 'lucide-react';
+import Link from 'next/link';
 
 type SubjectPlan = { id: string; paper: string; title: string; color: string; allocation: string; target: string; chapters: { name: string; work: string; time: string }[]; stuck: string; returnTo: string };
 
@@ -26,7 +27,7 @@ export default function ChaptersPage() {
       <div className="chapter-target"><Target size={20} /><div><span>Daily finish line</span><strong>{selected.target}</strong></div></div>
       <div className="chapter-list">{selected.chapters.map((chapter, index) => <article key={chapter.name}><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{chapter.name}</h3><p>{chapter.work}</p></div><time>{chapter.time}</time></article>)}</div>
       <div className="chapter-recovery"><div><Compass size={20} /><span>When you feel stuck</span><p>{selected.stuck}</p></div><div><RotateCcw size={20} /><span>Then come back</span><p>{selected.returnTo}</p></div></div>
-      <footer><span><BookOpenCheck size={17} /> Complete the blocks in order; record one error before ending.</span><a href="/daily-plan">Open today&apos;s tasks <ArrowRight size={16} /></a></footer>
+      <footer><span><BookOpenCheck size={17} /> Complete the blocks in order; record one error before ending.</span><Link href="/daily-plan">Open today&apos;s tasks <ArrowRight size={16} /></Link></footer>
     </section>
   </main></div>;
 }

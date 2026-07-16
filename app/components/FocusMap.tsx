@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import mermaid from 'mermaid';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const details: Record<string, { title: string; text: string }> = {
   start: { title: 'Start small', text: 'Open only today’s task. A clear first action lowers resistance and moves the brain out of scroll mode.' },
@@ -40,13 +40,34 @@ export default function FocusMap() {
   const id = `focus-map-${rawId.replace(/:/g, '')}`;
   const [svg, setSvg] = useState('');
   const [selected, setSelected] = useState('flow');
+  const [renderError, setRenderError] = useState(false);
+  const detailKeys = Object.keys(details);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'base', flowchart: { curve: 'basis', htmlLabels: true } });
+    let cancelled = false;
     window.selectNode = (node: string) => setSelected(node);
-    mermaid.render(id, chart).then(({ svg: rendered }) => setSvg(rendered));
-    return () => { delete window.selectNode; };
+    const renderDiagram = async () => {
+      try {
+        const { default: mermaid } = await import('mermaid');
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'base', flowchart: { curve: 'basis', htmlLabels: true } });
+        const { svg: rendered } = await mermaid.render(id, chart);
+        if (!cancelled) setSvg(rendered);
+      } catch {
+        if (!cancelled) setRenderError(true);
+      }
+    };
+    void renderDiagram();
+    return () => {
+      cancelled = true;
+      delete window.selectNode;
+    };
   }, [id]);
+
+  const moveSelection = (direction: number) => {
+    const currentIndex = detailKeys.indexOf(selected);
+    const nextIndex = (currentIndex + direction + detailKeys.length) % detailKeys.length;
+    setSelected(detailKeys[nextIndex]);
+  };
 
   return (
     <section className="focus-map-wrap">
@@ -56,11 +77,19 @@ export default function FocusMap() {
         <p>Tap any step to see why it exists. The loop deliberately turns effort into confidence instead of adding more material.</p>
       </div>
       <div className="focus-map-grid">
-        <div className="mermaid-canvas" dangerouslySetInnerHTML={{ __html: svg }} aria-label="Interactive learning process diagram" />
+        <div className="mermaid-canvas" aria-label="Interactive learning process diagram">
+          {renderError
+            ? <p className="map-render-error">The diagram could not render. Use the step controls to explore the complete study loop.</p>
+            : <div dangerouslySetInnerHTML={{ __html: svg }} />}
+        </div>
         <aside className="map-detail" aria-live="polite">
-          <span>{Object.keys(details).indexOf(selected) + 1} / {Object.keys(details).length}</span>
+          <span>{detailKeys.indexOf(selected) + 1} / {detailKeys.length}</span>
           <h3>{details[selected].title}</h3>
           <p>{details[selected].text}</p>
+          <div className="map-detail-actions" aria-label="Explore study-loop steps">
+            <button onClick={() => moveSelection(-1)} aria-label="Previous study-loop step"><ChevronLeft size={16} /> Previous</button>
+            <button onClick={() => moveSelection(1)} aria-label="Next study-loop step">Next <ChevronRight size={16} /></button>
+          </div>
         </aside>
       </div>
     </section>
