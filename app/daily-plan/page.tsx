@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays } from '@/lib/schedule';
+import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays, getProtocolDate, generateTasksForProtocolDay, PROTOCOL_DAYS } from '@/lib/schedule';
 import { DailyPlan, Task, SUBJECT_LABELS, SUBJECT_COLORS } from '@/types';
-import { Clock, CheckCircle, Circle, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Clock, CheckCircle, Circle, Calendar, TrendingUp, AlertTriangle, ChevronDown, LockKeyhole } from 'lucide-react';
 
 export default function DailyPlanPage() {
   const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
   const [dailyPlan, setDailyPlan] = useState<DailyPlan>(() => assignTasksForUser(new Date()));
   const [currentTimeSlot, setCurrentTimeSlot] = useState<string>('');
   const [suggestedSubject, setSuggestedSubject] = useState<string>('');
+  const [showSchedule, setShowSchedule] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -57,7 +58,7 @@ export default function DailyPlanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-8">
+    <div className="app-shell-bright min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-3">
@@ -193,6 +194,26 @@ export default function DailyPlanPage() {
             <p className="text-xs md:text-sm text-gray-300">Hours Studied</p>
           </div>
         </div>
+
+        <section className="protocol-calendar">
+          <button className="protocol-calendar-toggle" onClick={() => setShowSchedule((value) => !value)} aria-expanded={showSchedule}>
+            <span><Calendar className="w-5 h-5" /><span><strong>30-day study path</strong><small>Today is Day {protocolDay}. Future days unlock on their calendar date.</small></span></span>
+            <ChevronDown className={showSchedule ? 'rotate-180 transition-transform' : 'transition-transform'} />
+          </button>
+          {showSchedule && <div className="protocol-day-grid">
+            {Array.from({ length: PROTOCOL_DAYS }, (_, index) => {
+              const day = index + 1;
+              const unlocked = day <= protocolDay;
+              const date = getProtocolDate(day);
+              const tasks = generateTasksForProtocolDay(day);
+              return <article key={day} className={`protocol-day ${day === protocolDay ? 'today' : ''} ${unlocked ? 'unlocked' : 'locked'}`}>
+                <div><span>Day {day}</span><time>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</time></div>
+                <h3>{getPhase(day).replace(/^Phase \d: /, '')}</h3>
+                {unlocked ? <p>{tasks[0]?.task}</p> : <p><LockKeyhole size={13} /> Unlocks {date.toLocaleDateString('en-US', { weekday: 'long' })}</p>}
+              </article>;
+            })}
+          </div>}
+        </section>
 
         {/* Phase Reminder */}
         {protocolDay > 0 && protocolDay <= 30 && (

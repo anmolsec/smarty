@@ -19,7 +19,7 @@ export default function NavMenu() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="md:hidden p-2 text-[#526259] hover:text-[#174f3a] transition-colors"
+        className="mobile-menu-trigger md:hidden p-2 transition-colors"
         aria-label="Toggle menu"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

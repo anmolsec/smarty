@@ -1,7 +1,20 @@
 import { Task, Subject, TimeSlot, DailyPlan, UserProgress } from '@/types';
 
-export const EXAM_DATE = new Date('2026-05-16');
-export const PROTOCOL_START = new Date('2026-04-16');
+export const PROTOCOL_DAYS = 30;
+const PROTOCOL_START_KEY = 'foundation-protocol-start';
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function getProtocolStart(): Date {
+  if (typeof window === 'undefined') return startOfDay(new Date());
+  const stored = localStorage.getItem(PROTOCOL_START_KEY);
+  if (stored) return new Date(`${stored}T00:00:00`);
+  const today = startOfDay(new Date());
+  localStorage.setItem(PROTOCOL_START_KEY, today.toISOString().slice(0, 10));
+  return today;
+}
 
 export const SCHEDULE_CONFIG = {
   timeSlots: {
@@ -33,11 +46,17 @@ export const SCHEDULE_CONFIG = {
 };
 
 export function getProtocolDay(today: Date): number {
-  const diff = today.getTime() - PROTOCOL_START.getTime();
+  const diff = startOfDay(today).getTime() - getProtocolStart().getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   if (days < 0) return 0;
-  if (days >= 30) return 30;
+  if (days >= PROTOCOL_DAYS) return PROTOCOL_DAYS;
   return days + 1;
+}
+
+export function getProtocolDate(day: number): Date {
+  const date = getProtocolStart();
+  date.setDate(date.getDate() + Math.max(0, Math.min(PROTOCOL_DAYS, day) - 1));
+  return date;
 }
 
 export function getPhase(day: number): string {
@@ -75,6 +94,10 @@ export function getSuggestedSubject(): Subject | null {
 
 export function generateDailyTasks(date: Date): Task[] {
   const day = getProtocolDay(date);
+  return generateTasksForProtocolDay(day, date);
+}
+
+export function generateTasksForProtocolDay(day: number, date = getProtocolDate(day)): Task[] {
   const tasks: Task[] = [];
 
   Object.entries(SCHEDULE_CONFIG.timeSlots).forEach(([slotKey, slotConfig]) => {

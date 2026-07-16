@@ -56,7 +56,7 @@ export default function ResourcesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-8">
+    <div className="app-shell-bright min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-block bg-red-500/20 border border-red-500/40 rounded-full px-4 py-1 text-red-300 text-sm font-medium mb-4">

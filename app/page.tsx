@@ -1,14 +1,7 @@
 import Link from 'next/link';
 import { Calendar, BookOpen, Target, FileText, Clock, TrendingUp, AlertTriangle, Zap, Shield } from 'lucide-react';
 
-function getDaysRemaining(): number {
-  const exam = new Date('2026-05-16');
-  const today = new Date();
-  return Math.ceil((exam.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 export default function Home() {
-  const daysRemaining = getDaysRemaining();
 
   const quickAccess = [
     { title: 'Daily Plan', icon: Calendar, href: '/daily-plan', description: "Today's scheduled tasks" },
@@ -32,7 +25,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="app-shell-bright min-h-screen">
       <div className="max-w-7xl mx-auto px-4 py-8 md:py-16">
         {/* Hero Section */}
         <div className="text-center mb-16 space-y-6 animate-fade-in">
@@ -53,8 +46,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <Calendar className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-              <p className="stat-number text-4xl font-bold text-white">{daysRemaining}</p>
-              <p className="text-purple-200">Days to Exam</p>
+              <p className="stat-number text-4xl font-bold text-white">30</p>
+              <p className="text-purple-200">Day-by-day plan</p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <BookOpen className="w-8 h-8 text-green-400 mx-auto mb-3" />
