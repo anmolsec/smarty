@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Lora } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import NavMenu from "@/app/components/NavMenu";
@@ -14,16 +14,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "CA Foundation AIR 1 - 30-Day Strict Drill Protocol",
-  description: "30-Day military-grade execution plan for CA Foundation AIR 1",
+  title: "CA Foundation Focus — 30-Day Practice",
+  description: "A calm, focused 30-day CA Foundation exam practice workspace",
   manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#2563eb",
+  themeColor: "#f7f7f3",
 };
 
 export default function RootLayout({
@@ -34,17 +39,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="min-h-full flex flex-col">
-        <nav className="bg-white/10 backdrop-blur-sm border-b border-white/20 sticky top-0 z-50">
+        <nav className="bg-[#fffefa]/90 backdrop-blur-md border-b border-[#dde1dc] sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
-              <Link href="/" className="text-lg md:text-xl font-bold text-white">
-                CA Foundation AIR 1
+              <Link href="/" className="text-lg md:text-xl font-semibold text-[#173b2c] tracking-tight">
+                Foundation Focus
               </Link>
               <NavMenu />
             </div>

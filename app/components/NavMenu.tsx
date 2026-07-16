@@ -19,7 +19,7 @@ export default function NavMenu() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="md:hidden p-2 text-purple-200 hover:text-white transition-colors"
+        className="md:hidden p-2 text-[#526259] hover:text-[#174f3a] transition-colors"
         aria-label="Toggle menu"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,7 +37,7 @@ export default function NavMenu() {
             key={link.href}
             href={link.href}
             className={`transition-colors ${
-              pathname === link.href ? 'text-white font-medium' : 'text-purple-200 hover:text-white'
+              pathname === link.href ? 'text-[#174f3a] font-semibold' : 'text-[#68746c] hover:text-[#174f3a]'
             }`}
           >
             {link.label}
@@ -46,7 +46,7 @@ export default function NavMenu() {
       </div>
 
       {open && (
-        <div className="md:hidden fixed inset-0 top-16 z-50 bg-slate-900/95 backdrop-blur-md">
+        <div className="md:hidden fixed inset-0 top-16 z-50 bg-[#f7f7f3]/95 backdrop-blur-md">
           <div className="flex flex-col items-center gap-2 pt-8 px-4">
             {links.map((link) => (
               <Link
@@ -55,8 +55,8 @@ export default function NavMenu() {
                 onClick={() => setOpen(false)}
                 className={`w-full text-center py-4 rounded-xl text-lg transition-colors ${
                   pathname === link.href
-                    ? 'bg-white/15 text-white font-semibold'
-                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                    ? 'bg-[#dce8df] text-[#174f3a] font-semibold'
+                    : 'text-[#59675e] hover:bg-white hover:text-[#174f3a]'
                 }`}
               >
                 {link.label}

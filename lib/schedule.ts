@@ -231,7 +231,7 @@ export function saveTaskCompletion(taskId: string, done: boolean): void {
   const dateStr = new Date().toISOString().split('T')[0];
   const key = `daily-plan-${dateStr}`;
   const stored = localStorage.getItem(key);
-  let tasks: Task[] = stored ? JSON.parse(stored) : [];
+  const tasks: Task[] = stored ? JSON.parse(stored) : [];
   const taskIndex = tasks.findIndex(t => t.id === taskId);
   if (taskIndex >= 0) {
     tasks[taskIndex].done = done;

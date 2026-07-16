@@ -1,12 +1,14 @@
 import { Target, BookOpen, FileText, Brain, AlertTriangle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import FocusMap from '@/app/components/FocusMap';
 
 interface PhaseWithSubjects {
-  title: string; days: string; color: string; icon: any; goal: string;
+  title: string; days: string; color: string; icon: LucideIcon; goal: string;
   subjects: { name: string; target: string; detail: string }[];
   points?: never;
 }
 interface PhaseWithPoints {
-  title: string; days: string; color: string; icon: any; goal: string;
+  title: string; days: string; color: string; icon: LucideIcon; goal: string;
   points: string[];
   subjects?: never;
 }
@@ -82,7 +84,7 @@ export default function RoadmapPage() {
     },
   ];
 
-  const getPhaseIcon = (icon: any) => {
+  const getPhaseIcon = (icon: LucideIcon) => {
     const Icon = icon;
     return Icon;
   };
@@ -161,6 +163,8 @@ export default function RoadmapPage() {
         </div>
 
         {/* Key Milestones */}
+        <FocusMap />
+
         <div className="mt-16 bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">Key Milestones</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

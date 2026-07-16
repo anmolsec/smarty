@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays } from '@/lib/schedule';
-import { Task, SUBJECT_LABELS, SUBJECT_COLORS } from '@/types';
+import { DailyPlan, Task, SUBJECT_LABELS, SUBJECT_COLORS } from '@/types';
 import { Clock, CheckCircle, Circle, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
 
 export default function DailyPlanPage() {
   const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
-  const [dailyPlan, setDailyPlan] = useState<any>(null);
+  const [dailyPlan, setDailyPlan] = useState<DailyPlan>(() => assignTasksForUser(new Date()));
   const [currentTimeSlot, setCurrentTimeSlot] = useState<string>('');
   const [suggestedSubject, setSuggestedSubject] = useState<string>('');
 
@@ -26,15 +26,12 @@ export default function DailyPlanPage() {
       }
     }, 60000);
 
-    const plan = assignTasksForUser(new Date());
-    setDailyPlan(plan);
-
     return () => clearInterval(timer);
   }, []);
 
   const handleTaskToggle = (taskId: string, done: boolean) => {
     saveTaskCompletion(taskId, done);
-    setDailyPlan((prev: any) => ({
+    setDailyPlan((prev: DailyPlan) => ({
       ...prev,
       tasks: prev.tasks.map((task: Task) =>
         task.id === taskId ? { ...task, done } : task
@@ -47,14 +44,6 @@ export default function DailyPlanPage() {
       ),
     }));
   };
-
-  if (!dailyPlan) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <p className="text-white text-lg">Loading...</p>
-      </div>
-    );
-  }
 
   const protocolDay = getProtocolDay(new Date());
   const currentPhase = getPhase(protocolDay);
