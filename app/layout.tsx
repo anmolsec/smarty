@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Lora } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import NavMenu from "@/app/components/NavMenu";
+import Notifications from "@/app/components/Notifications";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,11 +48,14 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <nav className="bg-[#fffefa]/90 backdrop-blur-md border-b border-[#dde1dc] sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <Link href="/" className="text-lg md:text-xl font-semibold text-[#173b2c] tracking-tight">
                 Foundation Focus
               </Link>
-              <NavMenu />
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Notifications />
+                <NavMenu />
+              </div>
             </div>
           </div>
         </nav>

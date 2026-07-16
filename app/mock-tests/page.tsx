@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, Check, Clock3, FileText, Flag, Pause, Play, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2, Clock3, FileText, Flag, Pause, Play, RotateCcw, Send, ShieldCheck } from 'lucide-react';
 
 type Paper = {
   id: string;
@@ -48,21 +48,25 @@ const previewQuestions = [
     section: 'Business Mathematics',
     question: 'If the present value of an annuity of ₹5,000 for 10 years at 8% is required, which expression correctly begins the calculation?',
     options: ['₹5,000 × [(1 − 1.08⁻¹⁰) ÷ 0.08]', '₹5,000 × (1.08)¹⁰', '₹5,000 ÷ (1 − 0.08)¹⁰', '₹5,000 × [(1 + 1.08¹⁰) ÷ 0.08]'],
+    correct: 0,
   },
   {
     section: 'Logical Reasoning',
     question: 'Choose the next term in the series: 3, 8, 15, 24, 35, __',
     options: ['42', '46', '48', '50'],
+    correct: 2,
   },
   {
     section: 'Statistics',
     question: 'If mean is 45 and mode is 33, the median using the empirical relationship is:',
     options: ['39', '41', '43', '45'],
+    correct: 1,
   },
   {
     section: 'Statistics',
     question: 'Which measure is least affected by extreme observations?',
     options: ['Arithmetic mean', 'Median', 'Standard deviation', 'Coefficient of variation'],
+    correct: 1,
   },
 ];
 
@@ -81,6 +85,9 @@ export default function MockTestsPage() {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number | string>>({});
   const [flagged, setFlagged] = useState<number[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+  const [showSubmitCheck, setShowSubmitCheck] = useState(false);
+  const [mistakeType, setMistakeType] = useState('');
 
   useEffect(() => {
     if (!started || paused || seconds <= 0) return;
@@ -88,12 +95,47 @@ export default function MockTestsPage() {
     return () => window.clearInterval(timer);
   }, [started, paused, seconds]);
 
-  const progress = useMemo(() => Math.round((Object.keys(answers).length / previewQuestions.length) * 100), [answers]);
+  const questionCount = selected.objective ? previewQuestions.length : descriptiveQuestions[selected.id].length;
+  const progress = useMemo(() => Math.round((Object.keys(answers).length / questionCount) * 100), [answers, questionCount]);
+  const attempted = Object.values(answers).filter((answer) => typeof answer === 'number' || answer.trim().length > 0).length;
+  const correct = selected.objective ? previewQuestions.reduce((total, question, index) => total + (answers[index] === question.correct ? 1 : 0), 0) : 0;
+  const incorrect = selected.objective ? Math.max(0, attempted - correct) : 0;
+  const score = selected.objective ? Math.max(0, correct - (incorrect * 0.25)) : 0;
 
   const choosePaper = (paper: Paper) => {
     setSelected(paper);
     setSeconds(paper.minutes * 60);
+    setCurrent(0);
+    setAnswers({});
+    setFlagged([]);
+    setSubmitted(false);
   };
+
+  const resetAttempt = () => {
+    setStarted(false);
+    setPaused(false);
+    setSubmitted(false);
+    setShowSubmitCheck(false);
+    setCurrent(0);
+    setAnswers({});
+    setFlagged([]);
+    setMistakeType('');
+  };
+
+  if (submitted) {
+    return (
+      <div className="study-page results-page"><main className="page-wrap">
+        <p className="eyebrow">Attempt complete</p>
+        <div className="results-card">
+          <CheckCircle2 size={30} /><h1>{selected.objective ? 'Your practice-set review' : 'Your written attempt is saved'}</h1>
+          <p>{selected.objective ? 'Use this as a feedback signal, then turn one pattern into tomorrow’s task.' : 'Review your answer with the suggested-answer framework only after taking a short break.'}</p>
+          {selected.objective && <div className="result-metrics"><div><strong>{score.toFixed(2)}</strong><span>score / {questionCount}</span></div><div><strong>{correct}</strong><span>correct</span></div><div><strong>{incorrect}</strong><span>incorrect</span></div><div><strong>{questionCount - attempted}</strong><span>unattempted</span></div></div>}
+          <div className="mistake-log"><h2>What will you correct next?</h2><p>Give each lost mark a reason. This is the bridge between a mock and progress.</p><div>{['Concept gap', 'Calculation error', 'Application / interpretation', 'Time management'].map((type) => <button key={type} onClick={() => setMistakeType(type)} className={mistakeType === type ? 'selected' : ''}>{type}</button>)}</div>{mistakeType && <p className="log-confirmation">Saved focus: <strong>{mistakeType}</strong>. Add one targeted practice block to your Daily Plan.</p>}</div>
+          <div className="result-actions"><button className="quiet-button" onClick={resetAttempt}><ArrowLeft size={17} /> Choose another paper</button><button className="primary-button" onClick={() => { setSubmitted(false); setStarted(true); setSeconds(selected.minutes * 60); setAnswers({}); setCurrent(0); }}><RotateCcw size={17} /> Retry this set</button></div>
+        </div>
+      </main></div>
+    );
+  }
 
   if (started) {
     const q = selected.objective ? previewQuestions[current % previewQuestions.length] : descriptiveQuestions[selected.id][current];
@@ -117,22 +159,22 @@ export default function MockTestsPage() {
         <main className="exam-layout">
           <aside className="question-map">
             <button className="back-link" onClick={() => setStarted(false)}><ArrowLeft size={16} /> Exit paper</button>
-            <div className="progress-copy"><span>Attempted</span><strong>{Object.keys(answers).length} / {selected.questions}</strong></div>
+            <div className="progress-copy"><span>Attempted</span><strong>{attempted} / {questionCount}</strong></div>
             <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
             <p className="map-label">Question navigator</p>
             <div className="number-grid">
-              {Array.from({ length: Math.min(selected.questions, 20) }, (_, index) => (
+              {Array.from({ length: questionCount }, (_, index) => (
                 <button key={index} onClick={() => setCurrent(index)} className={`${current === index ? 'active' : ''} ${answers[index] !== undefined ? 'answered' : ''}`}>
                   {index + 1}
                 </button>
               ))}
             </div>
-            {selected.questions > 20 && <p className="muted-note">Showing the first 20 questions in this sample build.</p>}
+            <p className="muted-note">Sample set · {questionCount} varied questions</p>
           </aside>
 
           <section className="question-stage">
             {paused && <div className="pause-screen"><Pause size={28} /><h2>Paper paused</h2><p>Your place is saved. Resume when your desk is ready.</p></div>}
-            <div className="question-meta"><span>{q.section}</span><span>Question {current + 1} of {selected.questions}</span></div>
+            <div className="question-meta"><span>{q.section}</span><span>Question {current + 1} of {questionCount}</span></div>
             <h2>{q.question}</h2>
             {selected.objective ? <div className="answers">
               {options.map((option, index) => (
@@ -151,9 +193,10 @@ export default function MockTestsPage() {
               </button>
               <div>
                 <button className="quiet-button" disabled={current === 0} onClick={() => setCurrent(current - 1)}><ArrowLeft size={17} /> Previous</button>
-                <button className="primary-button" onClick={() => setCurrent(Math.min(selected.questions - 1, current + 1))}>Save & next <ArrowRight size={17} /></button>
+                {current === questionCount - 1 ? <button className="primary-button" onClick={() => setShowSubmitCheck(true)}>Finish set <Send size={17} /></button> : <button className="primary-button" onClick={() => setCurrent(current + 1)}>Save & next <ArrowRight size={17} /></button>}
               </div>
             </div>
+            {showSubmitCheck && <div className="submit-check"><h3>Finish this practice set?</h3><p>{attempted} of {questionCount} questions have a response. Flagged questions: {flagged.length}.</p><div><button className="quiet-button" onClick={() => setShowSubmitCheck(false)}>Keep working</button><button className="primary-button" onClick={() => { setShowSubmitCheck(false); setSubmitted(true); }}>Submit for review</button></div></div>}
           </section>
         </main>
       </div>
