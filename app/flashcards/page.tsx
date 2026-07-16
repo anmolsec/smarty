@@ -1,29 +1,44 @@
 'use client';
 
-import { useState } from 'react';
-import { RotateCcw, Sparkles } from 'lucide-react';
-
-const cards = [
-  { id: 'accounting', label: 'Accounting', front: 'Why are working notes worth writing?', back: 'They show the examiner your method and protect step marks, even when the final figure is wrong.', accent: '#285e46' },
-  { id: 'law', label: 'Business Laws', front: 'What is the four-step answer frame?', back: 'Provision → facts → application → conclusion. Use it before you reach for a model answer.', accent: '#49657a' },
-  { id: 'quant', label: 'Quantitative Aptitude', front: 'When should you skip an MCQ?', back: 'After roughly 90 seconds without a clear path. Mark it, protect time, and return during review.', accent: '#9a6b24' },
-  { id: 'economics', label: 'Economics', front: 'What should you do when a concept feels vague?', back: 'Draw the graph or write the definition from memory, check one explanation, then retry an adjacent MCQ.', accent: '#765f89' },
-  { id: 'review', label: 'Review loop', front: 'What turns a mock into progress?', back: 'Categorize the miss: concept, calculation, application, or time. Then assign one focused block tomorrow.', accent: '#b6506e' },
-  { id: 'focus', label: 'Focus', front: 'What is today’s only job?', back: 'Complete the current block. Tomorrow stays hidden until today’s work has a clear finish.', accent: '#386c9d' },
-];
+import { useEffect, useMemo, useState } from 'react';
+import { Check, Eye, EyeOff, RotateCcw, Shuffle, Sparkles } from 'lucide-react';
+import { Flashcard, parseFlashcardDeck, selectRandomCards } from '@/lib/flashcard-session';
 
 export default function FlashcardsPage() {
-  const [flipped, setFlipped] = useState<string[]>([]);
-  const toggle = (id: string) => setFlipped((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
-  const reset = () => setFlipped([]);
+  const [deck, setDeck] = useState<Flashcard[]>([]);
+  const [category, setCategory] = useState('All categories');
+  const [session, setSession] = useState<Flashcard[]>([]);
+  const [revealed, setRevealed] = useState<string[]>([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/flashcards.md')
+      .then((response) => response.ok ? response.text() : Promise.reject(new Error('Deck could not be loaded.')))
+      .then((markdown) => {
+        const cards = parseFlashcardDeck(markdown);
+        setDeck(cards);
+        setSession(selectRandomCards(cards, 'All categories'));
+      })
+      .catch((reason: Error) => setError(reason.message));
+  }, []);
+
+  const categories = useMemo(() => ['All categories', ...Array.from(new Set(deck.map((card) => card.category)))], [deck]);
+  const availableCount = category === 'All categories' ? deck.length : deck.filter((card) => card.category === category).length;
+  const generateSession = (nextCategory = category) => {
+    setSession(selectRandomCards(deck, nextCategory, 10));
+    setRevealed([]);
+  };
 
   return <div className="study-page flashcards-page"><main className="page-wrap">
-    <div className="page-heading"><p className="eyebrow">Active recall</p><h1>Turn over the<br /><em>important things.</em></h1><p>Tap a card to reveal the answer. A tiny recall loop is more useful than another passive reread.</p></div>
-    <div className="flashcard-toolbar"><span><Sparkles size={17} /> {flipped.length} of {cards.length} revealed</span><button onClick={reset}><RotateCcw size={16} /> Reset cards</button></div>
-    <section className="flashcard-grid" aria-label="Study flashcards">
-      {cards.map((card) => <button key={card.id} onClick={() => toggle(card.id)} className={`flip-card ${flipped.includes(card.id) ? 'is-flipped' : ''}`} style={{ '--card-accent': card.accent } as React.CSSProperties} aria-pressed={flipped.includes(card.id)}>
-        <span className="flip-card-inner"><span className="flip-card-front"><small>{card.label}</small><strong>{card.front}</strong><em>Tap to reveal</em></span><span className="flip-card-back"><small>{card.label} · answer</small><strong>{card.back}</strong><em>Tap to turn back</em></span></span>
-      </button>)}
-    </section>
+    <div className="page-heading"><p className="eyebrow">Random 10 active-recall session</p><h1>Ask ten.<br /><em>Recall ten.</em></h1><p>Choose a category, then generate ten unique random questions from the editable Markdown deck. Each answer stays hidden until you reveal it.</p></div>
+    <div className="flashcard-controls"><label>Ask from<select value={category} onChange={(event) => { setCategory(event.target.value); generateSession(event.target.value); }}>{categories.map((item) => <option key={item}>{item}</option>)}</select></label><span><Sparkles size={17} /> {availableCount} available · 10 selected per session</span><button className="next-card" onClick={() => generateSession()}><Shuffle size={16} /> New random 10</button></div>
+    {error ? <p className="flashcard-message">{error}</p> : deck.length === 0 ? <p className="flashcard-message">Loading your deck…</p> : <section className="flashcard-session" aria-label="Ten flashcard questions">
+      <header><div><h2>Session questions</h2><p>Source positions: {session.map((card) => card.number).join(', ')}</p></div><button onClick={() => setRevealed([])}><RotateCcw size={16} /> Hide all answers</button></header>
+      <ol>{session.map((card, index) => {
+        const isRevealed = revealed.includes(card.id);
+        return <li key={card.id} className={isRevealed ? 'revealed' : ''}><div className="flashcard-question"><span>{String(index + 1).padStart(2, '0')}</span><div><small>{card.category} · deck #{card.number}</small><h3>{card.question}</h3></div></div>{isRevealed ? <div className="flashcard-answer"><Check size={17} /><p><strong>Answer:</strong> {card.answer}</p><button onClick={() => setRevealed((cards) => cards.filter((id) => id !== card.id))}><EyeOff size={15} /> Hide</button></div> : <button className="reveal-answer" onClick={() => setRevealed((cards) => [...cards, card.id])}><Eye size={16} /> Reveal answer</button>}</li>;
+      })}</ol>
+    </section>}
+    <aside className="flashcard-source"><h2>Editable deck format</h2><p>Questions are read from <code>public/flashcards.md</code>. Add as many categories and cards as needed; the random-session logic safely selects ten unique cards from the chosen category.</p><pre>{`## Accounting\nQ: Your question\nA: Your answer\n---`}</pre></aside>
   </main></div>;
 }

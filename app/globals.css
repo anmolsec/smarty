@@ -283,10 +283,15 @@ input, select, textarea {
 .past-plans > button strong { font-size: 15px; }
 .past-plans > button small { margin-top: 3px; color: #728076; font-size: 12px; }
 .past-plans > div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 16px 16px; }
-.past-plans article { display: grid; gap: 4px; padding: 12px; background: #f5f7f4; border: 1px solid #e0e6df; border-radius: 11px; }
-.past-plans article span { color: #174f3a; font-size: 11px; font-weight: 750; text-transform: uppercase; }
-.past-plans article strong { color: #334438; font-size: 12px; }
-.past-plans article small { color: #79847c; font-size: 11px; }
+.past-plans > div > button { display: grid; min-height: 0; gap: 4px; padding: 12px; color: inherit; text-align: left; background: #f5f7f4; border: 1px solid #e0e6df; border-radius: 11px; }
+.past-plans > div > button:hover, .past-plans > div > button.selected { background: #eaf3ec; border-color: #8db89a; }
+.past-plans > div > button span { color: #174f3a; font-size: 11px; font-weight: 750; text-transform: uppercase; }
+.past-plans > div > button strong { color: #334438; font-size: 12px; }
+.past-plans > div > button small { color: #79847c; font-size: 11px; }
+.protocol-waiting { display: flex; align-items: flex-start; gap: 13px; padding: 22px; color: #31523d; background: #fffefa; border: 1px solid #d5e5da; border-radius: 17px; }
+.protocol-waiting svg { flex: none; color: #174f3a; }
+.protocol-waiting strong { display: block; margin-bottom: 5px; }
+.protocol-waiting p { margin: 0; color: #6c7b70; font-size: 13px; line-height: 1.55; }
 
 .chapter-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
 .chapter-tabs button { min-height: 82px; padding: 14px; color: #59685e; text-align: left; background: #fffefa; border: 1px solid #dce3dd; border-radius: 14px; font-size: 14px; font-weight: 700; }
@@ -319,6 +324,41 @@ input, select, textarea {
 .flashcard-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; color: #5e6d63; font-size: 13px; font-weight: 700; }
 .flashcard-toolbar span, .flashcard-toolbar button { display: inline-flex; align-items: center; gap: 8px; }
 .flashcard-toolbar button { min-height: 38px; padding: 8px 12px; color: #174f3a; background: #edf5ef; border: 1px solid #cfe0d3; border-radius: 9px; font-size: 12px; font-weight: 800; }
+.flashcard-controls { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 24px; padding: 17px; color: #65736a; background: #fffefa; border: 1px solid #dce3dd; border-radius: 15px; font-size: 13px; }
+.flashcard-controls label { display: grid; gap: 6px; color: #174f3a; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.flashcard-controls select { min-width: 230px; min-height: 42px; padding: 0 11px; color: #2b3a30; background: #f5f8f5; border: 1px solid #cfdbd1; border-radius: 9px; font: 600 14px var(--font-geist-sans); }
+.flashcard-controls > span { display: inline-flex; align-items: center; gap: 7px; }
+.flashcard-controls .next-card { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 9px 13px; color: white; background: #174f3a; border: 1px solid #174f3a; border-radius: 9px; font-size: 12px; font-weight: 800; }
+.flashcard-session { max-width: 800px; margin: 0 auto; overflow: hidden; background: #fffefa; border: 1px solid #dce3dd; border-radius: 18px; box-shadow: 0 16px 45px rgba(27,65,44,.08); }
+.flashcard-session > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px; background: #edf5ef; border-bottom: 1px solid #d8e5da; }
+.flashcard-session header h2 { margin: 0; color: #254534; font: 600 23px var(--font-lora), Georgia, serif; }
+.flashcard-session header p { margin: 4px 0 0; color: #6c7b70; font: 11px var(--font-geist-mono); }
+.flashcard-session header button { display: inline-flex; min-height: 38px; align-items: center; gap: 7px; flex: none; padding: 8px 11px; color: #174f3a; background: white; border: 1px solid #c7d9cb; border-radius: 8px; font-size: 12px; font-weight: 750; }
+.flashcard-session ol { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.flashcard-session li { padding: 21px 24px; border-bottom: 1px solid #e6ebe6; }
+.flashcard-session li:last-child { border-bottom: 0; }
+.flashcard-session li.revealed { background: #fbfdfb; }
+.flashcard-question { display: grid; grid-template-columns: 37px 1fr; gap: 13px; }
+.flashcard-question > span { display: grid; width: 33px; height: 33px; place-items: center; color: #174f3a; background: #e1efe4; border-radius: 9px; font: 750 11px var(--font-geist-mono); }
+.flashcard-question small { color: #748178; font-size: 10px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.flashcard-question h3 { margin: 7px 0 0; color: #2b3a30; font: 500 17px/1.45 var(--font-lora), Georgia, serif; }
+.reveal-answer { display: inline-flex; min-height: 37px; align-items: center; gap: 7px; margin: 15px 0 0 50px; padding: 8px 11px; color: #174f3a; background: #edf5ef; border: 1px solid #cfe0d3; border-radius: 8px; font-size: 12px; font-weight: 800; }
+.flashcard-answer { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 9px; margin: 15px 0 0 50px; padding: 13px; color: #24523a; background: #eaf5ed; border: 1px solid #cae1d0; border-radius: 10px; }
+.flashcard-answer > svg { margin-top: 2px; }
+.flashcard-answer p { margin: 0; font-size: 13px; line-height: 1.55; }
+.flashcard-answer button { display: inline-flex; min-height: 28px; align-items: center; gap: 5px; color: #416950; background: transparent; border: 0; font-size: 11px; font-weight: 750; }
+.flashcard-player { display: grid; max-width: 620px; margin: 0 auto; gap: 18px; }
+.flip-card.single { width: 100%; height: 330px; min-height: 330px; }
+.flashcard-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.flashcard-actions button { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; padding: 9px 12px; color: #174f3a; background: #edf5ef; border: 1px solid #cfe0d3; border-radius: 9px; font-size: 12px; font-weight: 800; }
+.flashcard-actions .next-card { color: white; background: #174f3a; border-color: #174f3a; }
+.flashcard-actions > span { color: #718076; font-size: 12px; }
+.flashcard-message { padding: 32px; color: #597064; text-align: center; background: #fffefa; border: 1px solid #dce3dd; border-radius: 15px; }
+.flashcard-source { max-width: 620px; margin: 44px auto 0; padding: 22px; color: #55645a; background: #f3f7f3; border: 1px solid #d7e3d9; border-radius: 15px; }
+.flashcard-source h2 { margin: 0; color: #234832; font: 600 22px var(--font-lora), Georgia, serif; }
+.flashcard-source p { font-size: 13px; line-height: 1.6; }
+.flashcard-source code { padding: 2px 4px; color: #174f3a; background: #e4efe6; border-radius: 4px; font: 12px var(--font-geist-mono); }
+.flashcard-source pre { margin: 16px 0 0; padding: 13px; overflow-x: auto; color: #e4f0e7; background: #173b2c; border-radius: 10px; font: 12px/1.6 var(--font-geist-mono); }
 .flashcard-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .flip-card { display: block; height: 250px; min-height: 250px; min-width: 0; padding: 0; color: inherit; text-align: left; background: transparent; border: 0; perspective: 1100px; }
 .flip-card-inner { position: relative; display: block; width: 100%; height: 100%; transition: transform .65s ease; transform-style: preserve-3d; }
@@ -393,4 +433,15 @@ input, select, textarea {
   .flashcard-grid { grid-template-columns: 1fr; gap: 14px; }
   .flip-card { height: 220px; min-height: 220px; }
   .flashcard-toolbar { align-items: flex-start; flex-direction: column; }
+  .flashcard-controls { align-items: stretch; flex-direction: column; }
+  .flashcard-controls select { width: 100%; min-width: 0; }
+  .flip-card.single { height: 290px; min-height: 290px; }
+  .flashcard-actions { align-items: stretch; flex-wrap: wrap; }
+  .flashcard-actions > span { width: 100%; text-align: center; order: 3; }
+  .flashcard-session > header { align-items: flex-start; flex-direction: column; padding: 19px 16px; }
+  .flashcard-session li { padding: 18px 16px; }
+  .flashcard-question h3 { font-size: 16px; }
+  .reveal-answer, .flashcard-answer { margin-left: 0; }
+  .flashcard-answer { grid-template-columns: auto 1fr; }
+  .flashcard-answer button { grid-column: 2; justify-self: start; }
 }

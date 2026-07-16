@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays, getProtocolDate, generateTasksForProtocolDay, PROTOCOL_DAYS } from '@/lib/schedule';
+import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays, getProtocolDate, generateTasksForProtocolDay, PROTOCOL_DAYS, PROTOCOL_END, PROTOCOL_START } from '@/lib/schedule';
 import { DailyPlan, Task, TimeSlot, SUBJECT_LABELS, SUBJECT_COLORS } from '@/types';
 import { Clock, CheckCircle, Circle, Calendar, TrendingUp, AlertTriangle, ChevronDown, LockKeyhole } from 'lucide-react';
 
@@ -13,6 +13,7 @@ export default function DailyPlanPage() {
   const [suggestedSubject, setSuggestedSubject] = useState<string>('');
   const [showSchedule, setShowSchedule] = useState(false);
   const [showPastPlans, setShowPastPlans] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(() => Math.max(1, getProtocolDay(new Date())));
 
   useEffect(() => {
     const updateStatus = () => {
@@ -36,7 +37,7 @@ export default function DailyPlanPage() {
   }, []);
 
   const handleTaskToggle = (taskId: string, done: boolean) => {
-    saveTaskCompletion(taskId, done);
+    saveTaskCompletion(taskId, done, dailyPlan.date);
     setDailyPlan((prev: DailyPlan) => ({
       ...prev,
       tasks: prev.tasks.map((task: Task) =>
@@ -63,6 +64,11 @@ export default function DailyPlanPage() {
   };
 
   const pastPlans = Array.from({ length: Math.max(0, protocolDay - 1) }, (_, index) => protocolDay - index - 1).slice(0, 7);
+  const selectUnlockedDay = (day: number) => {
+    if (day > protocolDay || protocolDay <= 0) return;
+    setSelectedDay(day);
+    setDailyPlan(assignTasksForUser(getProtocolDate(day)));
+  };
   const completedForDay = (day: number) => {
     if (typeof window === 'undefined') return 0;
     const date = getProtocolDate(day).toISOString().split('T')[0];
@@ -75,11 +81,11 @@ export default function DailyPlanPage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-3">
-          {protocolDay > 0 && protocolDay <= 30 && (
+          {protocolDay > 0 && protocolDay <= 30 ? (
             <div className="inline-block bg-red-500/20 border border-red-500/40 rounded-full px-3 py-1 text-red-300 text-xs md:text-sm font-medium">
-              🚨 {currentPhase} — {phaseDay}
+              {selectedDay === protocolDay ? `Day ${protocolDay} of 30 · ${currentPhase}` : `Reviewing Day ${selectedDay} · ${getPhase(selectedDay)}`}
             </div>
-          )}
+          ) : <div className="inline-block bg-red-500/20 border border-red-500/40 rounded-full px-3 py-1 text-red-300 text-xs md:text-sm font-medium">30-day plan opens {PROTOCOL_START.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>}
           <h1 className="text-3xl md:text-5xl font-bold text-white">
             Daily Study Plan
           </h1>
@@ -132,12 +138,12 @@ export default function DailyPlanPage() {
         </div>
 
         {/* Tasks by Time Slot */}
-        <div className="grid gap-4">
+        {protocolDay > 0 ? <div className="grid gap-4">
           {Object.entries(timeSlotLabels).map(([slotKey, slotLabel]) => {
             const tasks = dailyPlan.tasks.filter((t: Task) => t.timeSlot === slotKey);
             if (tasks.length === 0) return null;
             return (
-              <div key={slotKey} className={`daily-slot bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/10 ${currentSlotKey === slotKey ? 'current' : ''}`}>
+              <div key={slotKey} className={`daily-slot bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/10 ${selectedDay === protocolDay && currentSlotKey === slotKey ? 'current' : ''}`}>
                 <h3 className="text-base md:text-lg font-semibold text-white mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-purple-400" />
                   {slotLabel}
@@ -186,11 +192,11 @@ export default function DailyPlanPage() {
               </div>
             );
           })}
-        </div>
+        </div> : <div className="protocol-waiting"><Calendar className="w-6 h-6" /><div><strong>Your first study block unlocks on {PROTOCOL_START.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}.</strong><p>Day 30 completes on {PROTOCOL_END.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}. Until then, use Chapters and Flashcards for light orientation.</p></div></div>}
 
         {pastPlans.length > 0 && <section className="past-plans">
           <button onClick={() => setShowPastPlans((value) => !value)} aria-expanded={showPastPlans}><span><Calendar className="w-5 h-5" /><span><strong>Previous daily plans</strong><small>Review completed work without pulling it into today&apos;s focus.</small></span></span><ChevronDown className={showPastPlans ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>
-          {showPastPlans && <div>{pastPlans.map((day) => { const date = getProtocolDate(day); const completed = completedForDay(day); return <article key={day}><span>Day {day}</span><strong>{date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong><small>{completed} tasks completed</small></article>; })}</div>}
+          {showPastPlans && <div>{pastPlans.map((day) => { const date = getProtocolDate(day); const completed = completedForDay(day); return <button key={day} onClick={() => selectUnlockedDay(day)} className={selectedDay === day ? 'selected' : ''}><span>Day {day}</span><strong>{date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong><small>{completed} tasks completed</small></button>; })}</div>}
         </section>}
 
         {/* Quick Stats */}
@@ -224,11 +230,11 @@ export default function DailyPlanPage() {
               const unlocked = day <= protocolDay;
               const date = getProtocolDate(day);
               const tasks = generateTasksForProtocolDay(day);
-              return <article key={day} className={`protocol-day ${day === protocolDay ? 'today' : ''} ${unlocked ? 'unlocked' : 'locked'}`}>
+              return <button key={day} onClick={() => selectUnlockedDay(day)} disabled={!unlocked} className={`protocol-day ${day === selectedDay ? 'today' : ''} ${unlocked ? 'unlocked' : 'locked'}`}>
                 <div><span>Day {day}</span><time>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</time></div>
                 <h3>{getPhase(day).replace(/^Phase \d: /, '')}</h3>
                 {unlocked ? <p>{tasks[0]?.task}</p> : <p><LockKeyhole size={13} /> Unlocks {date.toLocaleDateString('en-US', { weekday: 'long' })}</p>}
-              </article>;
+              </button>;
             })}
           </div>}
         </section>

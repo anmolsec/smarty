@@ -67,3 +67,5 @@ testem.json
 
 # TypeScript
 *.tsbuildinfo
+.vercel
+.env*

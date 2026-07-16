@@ -1,19 +1,15 @@
 import { Task, Subject, TimeSlot, DailyPlan, UserProgress } from '@/types';
 
 export const PROTOCOL_DAYS = 30;
-const PROTOCOL_START_KEY = 'foundation-protocol-start';
+export const PROTOCOL_START = new Date(2026, 6, 16);
+export const PROTOCOL_END = new Date(2026, 7, 14);
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 export function getProtocolStart(): Date {
-  if (typeof window === 'undefined') return startOfDay(new Date());
-  const stored = localStorage.getItem(PROTOCOL_START_KEY);
-  if (stored) return new Date(`${stored}T00:00:00`);
-  const today = startOfDay(new Date());
-  localStorage.setItem(PROTOCOL_START_KEY, today.toISOString().slice(0, 10));
-  return today;
+  return new Date(PROTOCOL_START);
 }
 
 export const SCHEDULE_CONFIG = {
@@ -249,9 +245,8 @@ export function assignTasksForUser(userDateTime: Date): DailyPlan {
   };
 }
 
-export function saveTaskCompletion(taskId: string, done: boolean): void {
+export function saveTaskCompletion(taskId: string, done: boolean, dateStr = new Date().toISOString().split('T')[0]): void {
   if (typeof window === 'undefined') return;
-  const dateStr = new Date().toISOString().split('T')[0];
   const key = `daily-plan-${dateStr}`;
   const stored = localStorage.getItem(key);
   const tasks: Task[] = stored ? JSON.parse(stored) : [];
