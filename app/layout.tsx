@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
+import NavMenu from "@/app/components/NavMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CA Foundation AIR 1 - Practice Portal",
-  description: "90-Day Intensive Preparation Program for CA Foundation Exam",
+  title: "CA Foundation AIR 1 - 30-Day Strict Drill Protocol",
+  description: "30-Day military-grade execution plan for CA Foundation AIR 1",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
@@ -28,31 +36,31 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className="min-h-full flex flex-col">
-        <nav className="bg-white/10 backdrop-blur-sm border-b border-white/20">
-          <div className="max-w-7xl mx-auto px-4 py-4">
+        <nav className="bg-white/10 backdrop-blur-sm border-b border-white/20 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
-              <Link href="/" className="text-xl font-bold text-white">
+              <Link href="/" className="text-lg md:text-xl font-bold text-white">
                 CA Foundation AIR 1
               </Link>
-              <div className="hidden md:flex items-center gap-6">
-                <Link href="/daily-plan" className="text-purple-200 hover:text-white transition-colors">
-                  Daily Plan
-                </Link>
-                <Link href="/mock-tests" className="text-purple-200 hover:text-white transition-colors">
-                  Mock Tests
-                </Link>
-                <Link href="/roadmap" className="text-purple-200 hover:text-white transition-colors">
-                  Roadmap
-                </Link>
-                <Link href="/resources" className="text-purple-200 hover:text-white transition-colors">
-                  Resources
-                </Link>
-              </div>
+              <NavMenu />
             </div>
           </div>
         </nav>
         <main className="flex-1">{children}</main>
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

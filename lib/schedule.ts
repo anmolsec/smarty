@@ -1,6 +1,8 @@
 import { Task, Subject, TimeSlot, DailyPlan, UserProgress } from '@/types';
 
-// Schedule configuration based on time slots
+export const EXAM_DATE = new Date('2026-05-16');
+export const PROTOCOL_START = new Date('2026-04-16');
+
 export const SCHEDULE_CONFIG = {
   timeSlots: {
     morning_practical: {
@@ -30,177 +32,191 @@ export const SCHEDULE_CONFIG = {
   },
 };
 
-// Get current time slot based on user's local time
+export function getProtocolDay(today: Date): number {
+  const diff = today.getTime() - PROTOCOL_START.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days < 0) return 0;
+  if (days >= 30) return 30;
+  return days + 1;
+}
+
+export function getPhase(day: number): string {
+  if (day <= 0) return 'Pre-Protocol: Foundation Phase';
+  if (day <= 10) return 'Phase 1: Rapid Syllabus Sweep';
+  if (day <= 20) return 'Phase 2: Heavy Application & RTPs';
+  if (day <= 27) return 'Phase 3: The Simulation Window';
+  return 'Phase 4: Final Recall';
+}
+
+export function getPhaseDays(day: number): string {
+  if (day <= 0) return 'Days remaining';
+  if (day <= 10) return `Day ${day}/10`;
+  if (day <= 20) return `Day ${day - 10}/10`;
+  if (day <= 27) return `Day ${day - 20}/8`;
+  return `Day ${day - 27}/3`;
+}
+
 export function getCurrentTimeSlot(): TimeSlot | null {
   const now = new Date();
   const hour = now.getHours() + now.getMinutes() / 60;
-
   if (hour >= 6 && hour < 9) return 'morning_practical';
   if (hour >= 10.5 && hour < 13.5) return 'midday_descriptive';
   if (hour >= 15 && hour < 17) return 'afternoon_objective';
   if (hour >= 19 && hour < 21) return 'evening_revision';
-  
-  return null; // Outside study hours
+  return null;
 }
 
-// Get appropriate subject based on current time
 export function getSuggestedSubject(): Subject | null {
   const timeSlot = getCurrentTimeSlot();
   if (!timeSlot) return null;
-  
   const subjects = SCHEDULE_CONFIG.timeSlots[timeSlot].subjects;
-  // Randomly select from available subjects for this time slot
   return subjects[Math.floor(Math.random() * subjects.length)];
 }
 
-// Generate tasks for a specific date based on the schedule
 export function generateDailyTasks(date: Date): Task[] {
-  const dayOfYear = getDayOfYear(date);
+  const day = getProtocolDay(date);
   const tasks: Task[] = [];
-  
-  // Create tasks for each time slot
+
   Object.entries(SCHEDULE_CONFIG.timeSlots).forEach(([slotKey, slotConfig]) => {
     const timeSlot = slotKey as TimeSlot;
     const subjects = slotConfig.subjects;
-    
     subjects.forEach((subject, index) => {
       tasks.push({
         id: `${date.toISOString().split('T')[0]}-${timeSlot}-${subject}-${index}`,
-        day: dayOfYear,
+        day,
         subject,
-        task: getTaskDescription(subject, timeSlot, dayOfYear),
-        duration: 90, // 90 minutes per task
+        task: getTaskDescription(subject, timeSlot, day),
+        duration: 90,
         timeSlot,
         done: false,
       });
     });
   });
-  
+
   return tasks;
 }
 
-// Get task description based on subject and time slot
 function getTaskDescription(subject: Subject, timeSlot: TimeSlot, day: number): string {
   const phase = getPhase(day);
-  
+
   const taskTemplates: Record<Subject, Record<TimeSlot, string[]>> = {
     accounts: {
       morning_practical: [
-        'Chapter Theory Study',
-        'Practical Problems',
-        'Past Year Questions',
-        'RTP Problems',
+        'Solve ICAI Module Illustrations',
+        'Final Accounts of Companies',
+        'Issue of Shares/Debentures',
+        'Rectification of Errors Practice',
+        'Past Year Paper Problems',
+        'RTP Problem Dissection',
       ],
       midday_descriptive: [
-        'Theory Concepts',
-        'Accounting Standards',
-        'Case Studies',
+        'Theory Concepts Revision',
+        'Accounting Standards Review',
+        'Case Studies Analysis',
       ],
       afternoon_objective: [
-        'MCQ Practice',
-        'Quick Revision',
-        'Formula Application',
+        'MCQ Speed Drills',
+        'Time-bound Problem Sets',
+        'Working Notes Practice',
       ],
       evening_revision: [
-        'Day Summary',
-        'Weak Area Focus',
-        'Mock Test Review',
+        'Mistake Log Entry',
+        'Weak Area Deep Work',
+        'Formula Sheet Update',
       ],
     },
     law: {
       morning_practical: [
-        'Section Memorization',
-        'Case Law Study',
+        'Contract Act Section Memorization',
+        'Companies Act Keyword Drill',
+        'Section Number Recall',
       ],
       midday_descriptive: [
-        'Chapter Theory',
-        'Legal Provisions',
-        'Application Questions',
+        '4-Step Answer Writing',
+        'Provision → Facts → Analysis → Conclusion',
+        'Full 10-15 Mark Answer Practice',
+        'Legal Keyword Underlining Drill',
       ],
       afternoon_objective: [
-        'MCQ Practice',
-        'Section Recall',
+        'Section-wise MCQ Blitz',
+        'Case Law Application MCQs',
+        'Option Elimination Practice',
       ],
       evening_revision: [
-        'Key Sections Review',
-        'Important Cases',
+        'Keyword Notebook Review',
+        'Important Sections Recap',
+        'Pre-Sleep Passive Review',
       ],
     },
     math: {
       morning_practical: [
-        'Formula Practice',
-        'Problem Solving',
-        'Calculation Speed',
+        'Calculator M+/M-/GT Mastery',
+        'Time Value of Money Problems',
+        'Annuity Speed Drills',
       ],
       midday_descriptive: [
-        'Theory Concepts',
-        'Step-by-step Solutions',
+        'Statistics Theory Recap',
+        'Formula Derivation Practice',
       ],
       afternoon_objective: [
-        'MCQ Drills',
-        'Time-bound Practice',
+        '50-100 MCQ Blitz Session',
+        '72-Second-Per-Question Drill',
+        'Option Elimination Tactics',
       ],
       evening_revision: [
-        'Formula Revision',
-        'Mistake Analysis',
+        'Formula Sheet Consolidation',
+        'Mistake Log Analysis',
+        'Grand Total Function Practice',
       ],
     },
     economics: {
       morning_practical: [
-        'Concept Maps',
-        'Diagram Practice',
+        'Hand-drawn Graph Practice',
+        'Demand & Supply Curves',
+        'Cost Curves Mastery',
       ],
       midday_descriptive: [
-        'Chapter Study',
-        'Economic Theories',
-        'Graph Analysis',
+        'Theory of Demand & Supply',
+        'Price Determination Analysis',
+        'Market Structures Deep Dive',
       ],
       afternoon_objective: [
-        'MCQ Practice',
-        'Term Definitions',
+        'Eco MCQ Speed Run',
+        'Term Definition Quick Recall',
+        'Graph-based MCQs',
       ],
       evening_revision: [
-        'Key Concepts',
-        'Current Affairs Link',
+        'Key Concepts Summary',
+        'Graph Memory Recall',
+        'Formula & Keyword Review',
       ],
     },
   };
-  
+
   const templates = taskTemplates[subject][timeSlot];
-  return `${phase} - ${templates[day % templates.length]}`;
+  return `${phase.substring(0, 12)} - ${templates[day % templates.length]}`;
 }
 
-// Get current phase based on day number
-function getPhase(day: number): string {
-  if (day <= 10) return 'Phase 1: Foundation Building';
-  if (day <= 20) return 'Phase 2: Intensive Practice';
-  if (day <= 27) return 'Phase 3: Mock Tests & Analysis';
-  return 'Phase 4: Final Revision';
-}
-
-// Get day of year (1-365)
-function getDayOfYear(date: Date): number {
-  const start = new Date(date.getFullYear(), 0, 0);
-  const diff = date.getTime() - start.getTime();
-  const oneDay = 1000 * 60 * 60 * 24;
-  return Math.floor(diff / oneDay);
-}
-
-// Assign tasks based on user's current datetime
 export function assignTasksForUser(userDateTime: Date): DailyPlan {
   const dateStr = userDateTime.toISOString().split('T')[0];
   const tasks = generateDailyTasks(userDateTime);
-  
-  // Load completed tasks from localStorage (client-side only)
+
   let completedCount = 0;
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem(`daily-plan-${dateStr}`);
     if (stored) {
       const storedTasks = JSON.parse(stored) as Task[];
-      completedCount = storedTasks.filter(t => t.done).length;
+      storedTasks.forEach(st => {
+        const idx = tasks.findIndex(t => t.id === st.id);
+        if (idx >= 0) {
+          tasks[idx].done = st.done;
+          tasks[idx].completedAt = st.completedAt;
+          if (st.done) completedCount++;
+        }
+      });
     }
   }
-  
+
   return {
     date: dateStr,
     tasks,
@@ -210,29 +226,22 @@ export function assignTasksForUser(userDateTime: Date): DailyPlan {
   };
 }
 
-// Save task completion
 export function saveTaskCompletion(taskId: string, done: boolean): void {
   if (typeof window === 'undefined') return;
-  
   const dateStr = new Date().toISOString().split('T')[0];
   const key = `daily-plan-${dateStr}`;
   const stored = localStorage.getItem(key);
-  
   let tasks: Task[] = stored ? JSON.parse(stored) : [];
-  
   const taskIndex = tasks.findIndex(t => t.id === taskId);
   if (taskIndex >= 0) {
     tasks[taskIndex].done = done;
     tasks[taskIndex].completedAt = done ? new Date().toISOString() : undefined;
   } else {
-    // Task not found, might be from generated list
-    // In real app, you'd fetch the full task list first
+    tasks.push({ id: taskId, day: 0, subject: 'accounts', task: '', duration: 90, timeSlot: 'morning_practical', done, completedAt: done ? new Date().toISOString() : undefined });
   }
-  
   localStorage.setItem(key, JSON.stringify(tasks));
 }
 
-// Get user progress
 export function getUserProgress(): UserProgress {
   const defaultProgress: UserProgress = {
     totalTasksCompleted: 0,
@@ -245,17 +254,13 @@ export function getUserProgress(): UserProgress {
     streak: 0,
     mockTestsCompleted: 0,
   };
-  
   if (typeof window === 'undefined') return defaultProgress;
-  
   const stored = localStorage.getItem('user-progress');
   return stored ? JSON.parse(stored) : defaultProgress;
 }
 
-// Update user progress
 export function updateUserProgress(progress: Partial<UserProgress>): void {
   if (typeof window === 'undefined') return;
-  
   const current = getUserProgress();
   const updated = { ...current, ...progress };
   localStorage.setItem('user-progress', JSON.stringify(updated));
