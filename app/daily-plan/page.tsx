@@ -2,21 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { assignTasksForUser, saveTaskCompletion, getCurrentTimeSlot, getSuggestedSubject, getProtocolDay, getPhase, getPhaseDays, getProtocolDate, generateTasksForProtocolDay, PROTOCOL_DAYS } from '@/lib/schedule';
-import { DailyPlan, Task, SUBJECT_LABELS, SUBJECT_COLORS } from '@/types';
+import { DailyPlan, Task, TimeSlot, SUBJECT_LABELS, SUBJECT_COLORS } from '@/types';
 import { Clock, CheckCircle, Circle, Calendar, TrendingUp, AlertTriangle, ChevronDown, LockKeyhole } from 'lucide-react';
 
 export default function DailyPlanPage() {
   const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
   const [dailyPlan, setDailyPlan] = useState<DailyPlan>(() => assignTasksForUser(new Date()));
   const [currentTimeSlot, setCurrentTimeSlot] = useState<string>('');
+  const [currentSlotKey, setCurrentSlotKey] = useState<TimeSlot | null>(null);
   const [suggestedSubject, setSuggestedSubject] = useState<string>('');
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showPastPlans, setShowPastPlans] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const updateStatus = () => {
       const now = new Date();
       setCurrentDateTime(now);
       const slot = getCurrentTimeSlot();
+      setCurrentSlotKey(slot);
       if (slot) {
         setCurrentTimeSlot(slot.replace('_', ' ').replace('morning', 'Morning').replace('midday', 'Midday').replace('afternoon', 'Afternoon').replace('evening', 'Evening').replace('practical', 'Practical').replace('descriptive', 'Descriptive').replace('objective', 'Objective').replace('revision', 'Revision'));
         const subject = getSuggestedSubject();
@@ -25,7 +28,9 @@ export default function DailyPlanPage() {
         setCurrentTimeSlot('Outside Study Hours — Rest & Recharge');
         setSuggestedSubject('');
       }
-    }, 60000);
+    };
+    updateStatus();
+    const timer = setInterval(updateStatus, 60000);
 
     return () => clearInterval(timer);
   }, []);
@@ -55,6 +60,14 @@ export default function DailyPlanPage() {
     midday_descriptive: 'Midday Descriptive (10:30-13:30)',
     afternoon_objective: 'Afternoon Objective (15:00-17:00)',
     evening_revision: 'Evening Revision (19:00-21:00)',
+  };
+
+  const pastPlans = Array.from({ length: Math.max(0, protocolDay - 1) }, (_, index) => protocolDay - index - 1).slice(0, 7);
+  const completedForDay = (day: number) => {
+    if (typeof window === 'undefined') return 0;
+    const date = getProtocolDate(day).toISOString().split('T')[0];
+    const stored = localStorage.getItem(`daily-plan-${date}`);
+    return stored ? (JSON.parse(stored) as Task[]).filter((task) => task.done).length : 0;
   };
 
   return (
@@ -124,7 +137,7 @@ export default function DailyPlanPage() {
             const tasks = dailyPlan.tasks.filter((t: Task) => t.timeSlot === slotKey);
             if (tasks.length === 0) return null;
             return (
-              <div key={slotKey} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/10">
+              <div key={slotKey} className={`daily-slot bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/10 ${currentSlotKey === slotKey ? 'current' : ''}`}>
                 <h3 className="text-base md:text-lg font-semibold text-white mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-purple-400" />
                   {slotLabel}
@@ -174,6 +187,11 @@ export default function DailyPlanPage() {
             );
           })}
         </div>
+
+        {pastPlans.length > 0 && <section className="past-plans">
+          <button onClick={() => setShowPastPlans((value) => !value)} aria-expanded={showPastPlans}><span><Calendar className="w-5 h-5" /><span><strong>Previous daily plans</strong><small>Review completed work without pulling it into today&apos;s focus.</small></span></span><ChevronDown className={showPastPlans ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>
+          {showPastPlans && <div>{pastPlans.map((day) => { const date = getProtocolDate(day); const completed = completedForDay(day); return <article key={day}><span>Day {day}</span><strong>{date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong><small>{completed} tasks completed</small></article>; })}</div>}
+        </section>}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

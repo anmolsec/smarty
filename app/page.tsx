@@ -6,7 +6,7 @@ export default function Home() {
   const quickAccess = [
     { title: 'Daily Plan', icon: Calendar, href: '/daily-plan', description: "Today's scheduled tasks" },
     { title: 'Mock Tests', icon: FileText, href: '/mock-tests', description: 'Practice with timed tests' },
-    { title: 'Roadmap', icon: Target, href: '/roadmap', description: '30-day protocol phases' },
+    { title: 'Chapters', icon: Target, href: '/chapters', description: 'Subject blocks & recovery guidance' },
     { title: 'Resources', icon: BookOpen, href: '/resources', description: 'Study materials & links' },
   ];
 

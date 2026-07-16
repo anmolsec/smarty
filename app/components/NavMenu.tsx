@@ -10,6 +10,7 @@ export default function NavMenu() {
 
   const links = [
     { href: '/daily-plan', label: 'Daily Plan' },
+    { href: '/chapters', label: 'Chapters' },
     { href: '/mock-tests', label: 'Mock Tests' },
     { href: '/roadmap', label: 'Roadmap' },
     { href: '/resources', label: 'Resources' },
@@ -19,7 +20,7 @@ export default function NavMenu() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="mobile-menu-trigger md:hidden p-2 transition-colors"
+        className={`mobile-menu-trigger md:hidden p-2 transition-all ${open ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
         aria-label="Toggle menu"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,8 +47,9 @@ export default function NavMenu() {
       </div>
 
       {open && (
-        <div className="md:hidden fixed inset-0 top-16 z-50 bg-[#f7f7f3]/95 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-2 pt-8 px-4">
+        <div className="mobile-menu-overlay md:hidden fixed inset-0 z-50 bg-[#f7f7f3]/94 backdrop-blur-xl">
+          <div className="flex flex-col items-center gap-2 pt-[max(5rem,calc(env(safe-area-inset-top)+3rem))] px-4">
+            <button className="mobile-menu-close" onClick={() => setOpen(false)} aria-label="Close menu">×</button>
             {links.map((link) => (
               <Link
                 key={link.href}
