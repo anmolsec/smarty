@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Calendar, BookOpen, Target, FileText, Clock, TrendingUp, AlertTriangle, Zap, Shield } from 'lucide-react';
+import { Calendar, BookOpen, Target, FileText, Clock, TrendingUp, AlertTriangle, Zap, Shield, Sparkles } from 'lucide-react';
 
 export default function Home() {
 
@@ -7,7 +7,7 @@ export default function Home() {
     { title: 'Daily Plan', icon: Calendar, href: '/daily-plan', description: "Today's scheduled tasks" },
     { title: 'Mock Tests', icon: FileText, href: '/mock-tests', description: 'Practice with timed tests' },
     { title: 'Chapters', icon: Target, href: '/chapters', description: 'Subject blocks & recovery guidance' },
-    { title: 'Resources', icon: BookOpen, href: '/resources', description: 'Study materials & links' },
+    { title: 'Flashcards', icon: Sparkles, href: '/flashcards', description: 'Short active-recall loops' },
   ];
 
   const timeSlots = [

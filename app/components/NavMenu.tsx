@@ -11,6 +11,7 @@ export default function NavMenu() {
   const links = [
     { href: '/daily-plan', label: 'Daily Plan' },
     { href: '/chapters', label: 'Chapters' },
+    { href: '/flashcards', label: 'Flashcards' },
     { href: '/mock-tests', label: 'Mock Tests' },
     { href: '/roadmap', label: 'Roadmap' },
     { href: '/resources', label: 'Resources' },
@@ -20,16 +21,12 @@ export default function NavMenu() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className={`mobile-menu-trigger md:hidden p-2 transition-all ${open ? 'pointer-events-none opacity-0' : 'opacity-100'}`}
+        className={`mobile-menu-trigger md:hidden ${open ? 'is-open' : ''}`}
         aria-label="Toggle menu"
+        aria-expanded={open}
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {open ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
+        <span>Menu</span>
+        <span className="menu-bars" aria-hidden="true"><i /><i /><i /></span>
       </button>
 
       <div className="hidden md:flex items-center gap-6">
@@ -47,9 +44,9 @@ export default function NavMenu() {
       </div>
 
       {open && (
-        <div className="mobile-menu-overlay md:hidden fixed inset-0 z-50 bg-[#f7f7f3]/94 backdrop-blur-xl">
-          <div className="flex flex-col items-center gap-2 pt-[max(5rem,calc(env(safe-area-inset-top)+3rem))] px-4">
-            <button className="mobile-menu-close" onClick={() => setOpen(false)} aria-label="Close menu">×</button>
+        <>
+          <button className="mobile-menu-scrim md:hidden" aria-label="Close menu" onClick={() => setOpen(false)} />
+          <div className="mobile-menu-panel md:hidden">
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -65,7 +62,7 @@ export default function NavMenu() {
               </Link>
             ))}
           </div>
-        </div>
+        </>
       )}
     </>
   );
